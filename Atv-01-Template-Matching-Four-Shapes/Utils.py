@@ -1,3 +1,4 @@
+from tkinter import Image
 from skimage.metrics import mean_squared_error
 import numpy as np
 import numpy as np
@@ -5,9 +6,11 @@ import random
 import matplotlib.image as mpimg
 import numpy as np
 import random
-
+from PIL import Image
+import numpy as np
 import numpy as np
 import random
+
 def contar_pixels_3x3(image_path, threshold=128):
     """
     Conta pixels pretos e brancos em uma imagem dividida em 3x3 zonas.
@@ -17,30 +20,27 @@ def contar_pixels_3x3(image_path, threshold=128):
         threshold (int): Limiar para binarização (0-255).
         
     Returns:
-        list: Lista de 9 dicionários com contagem de pixels de cada zona.
-              Exemplo: [{'pretos': 10, 'brancos': 20}, ...]
+        np.array: Vetor de 18 elementos: [pretos_z1, brancos_z1, ..., pretos_z9, brancos_z9]
     """
-    img = Image.open(image_path).convert('L')  # Converte para tons de cinza
+    # Abre imagem e converte para tons de cinza
+    img = Image.open(image_path).convert('L')
     width, height = img.size
     
-    # Calcula tamanho de cada zona
     zone_width = width // 3
     zone_height = height // 3
     
-    zonas = []
+    features = []
     
     for row in range(3):
         for col in range(3):
             pretos = 0
             brancos = 0
             
-            # Define a área da zona
             x_start = col * zone_width
             y_start = row * zone_height
             x_end = x_start + zone_width
             y_end = y_start + zone_height
             
-            # Contagem de pixels na zona
             for y in range(y_start, y_end):
                 for x in range(x_start, x_end):
                     pixel = img.getpixel((x, y))
@@ -49,9 +49,9 @@ def contar_pixels_3x3(image_path, threshold=128):
                     else:
                         brancos += 1
             
-            zonas.append({'pretos': pretos, 'brancos': brancos})
+            features.extend([pretos, brancos])
     
-    return zonas
+    return np.array(features)
 
 def prepare_template_and_samples_arrays_bw(images_list, num_samples=3):
     """
@@ -134,6 +134,13 @@ def match_size(A, B):
     cols = min(A.shape[1], B.shape[1])
 
     return A[:rows, :cols], B[:rows, :cols]
+
+# IMMSE com truncamento
+def immse_truncate(X, Y, max_val=520):
+    X, Y = match_size(X, Y)
+    mse = mean_squared_error(X, Y)
+    return mse / (max_val**2) 
+
 
 # IMMSE
 def immse(X, Y):
